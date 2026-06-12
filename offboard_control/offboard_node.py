@@ -55,7 +55,7 @@ class OffboardControl(Node):
         while rclpy.ok():
             key=input()
             print(f'command recieved = {key}')
-            if key.lower()=='q':
+            if key.lower()=='l':
                 self.land_request=True
                 self.ready2hover=False
                 self.disarm=False
@@ -103,11 +103,12 @@ class OffboardControl(Node):
                 # Arm
                 self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM,param1=1.0)
             
-            elif self.offboard_setpoint_counter>30:
+            elif self.offboard_setpoint_counter>50:
                 # Publish desired position
-                self.publish_trajectory_setpoint(self.altitude)
+                self.publish_trajectory_setpoint()
 
         elif self.path1:
+            self.straight_path_setpoint(self.altitude)
             self.path_counter_straight+=1
 
         
@@ -127,7 +128,7 @@ class OffboardControl(Node):
         angle = self.path_counter_straight*0.02
         x = self.distance*math.sin(angle)
         msg = TrajectorySetpoint()
-        msg.position = [x,0,z]
+        msg.position = [x,0.0,z]
         msg.yaw=0.0
         self.trajectory_setpoint_pub(msg)
 
@@ -159,14 +160,14 @@ class OffboardControl(Node):
 
         self.offboard_control_mode_pub.publish(msg)
 
-    def publish_trajectory_setpoint(self,z):
+    def publish_trajectory_setpoint(self):
 
         msg = TrajectorySetpoint()
 
         msg.timestamp = self.get_clock().now().nanoseconds // 1000
 
         # Position setpoint
-        msg.position = [0.0, 0.0, z]
+        msg.position = [0.0, 0.0, -0.5]
 
         # Yaw angle
         msg.yaw = 0.0
