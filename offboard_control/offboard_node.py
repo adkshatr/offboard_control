@@ -130,7 +130,7 @@ class OffboardControl(Node):
         msg = TrajectorySetpoint()
         msg.position = [x,0.0,z]
         msg.yaw=0.0
-        self.trajectory_setpoint_pub(msg)
+        self.trajectory_setpoint_pub.publish(msg)
 
     def circular_path_setpoint(self, z):
         # angle increment by 0.02 rad
@@ -144,7 +144,7 @@ class OffboardControl(Node):
         #vy = R*math.cos(angle)
         #yaw = math.atan2(vy,vx)
         msg.yaw=0.0
-        self.trajectory_setpoint_pub(msg)
+        self.trajectory_setpoint_pub.publish(msg)
 
     def publish_offboard_control_mode(self):
 
