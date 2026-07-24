@@ -4,7 +4,7 @@ import threading
 from rclpy.node import Node
 import math
 
-from px4_msgs.msg import OffboardControlMode, TrajectorySetpoint, VehicleCommand, VehicleLocalPosition
+from px4_msgs.msg import OffboardControlMode, TrajectorySetpoint, VehicleCommand, VehicleLocalPosition,TimesyncStatus
 from geometry_msgs.msg import PoseStamped
 
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
@@ -25,14 +25,15 @@ class OffboardControl(Node):
         self.create_subscription(VehicleLocalPosition,"/fmu/out/vehicle_local_position",self.curr_pose,qos_profile)
         #self.attitude_setpoint_pub = self.create_publisher(VehicleAttitudeSetpoint,'/fmu/in/trajectory_setpoint',qos_profile)
 
+        self.create_subscription(TimesyncStatus,"/fmu/out/timesync_status",self.time_update,10)
         self.vehicle_command_pub = self.create_publisher(VehicleCommand,'/fmu/in/vehicle_command',qos_profile)
         
         # Timer at 10Hz
         self.timer = self.create_timer(0.02, self.timer_callback)
 
         self.get_logger().info("Offboard control node started")
-        self.time = self.get_clock().now().nanoseconds // 1000
-        self.time_at_arm= 0
+        #self.time = self.timestamp
+        #self.time_at_arm= 0
         
         # counters
         self.offboard_setpoint_counter = 0
@@ -116,6 +117,10 @@ class OffboardControl(Node):
                 self.path1=False
                 self.hold=False
                 self.target_point_follower=True
+
+    def time_update(self,msg):
+        self.timestamp=msg.timestamp
+    
 
     def target_point_listener(self,msg):
         self.target_set_point_x=msg[0]
@@ -215,7 +220,7 @@ class OffboardControl(Node):
 
         msg = OffboardControlMode()
 
-        msg.timestamp = self.get_clock().now().nanoseconds // 1000
+        msg.timestamp = self.timestamp
 
         msg.position = True
         msg.velocity = False
@@ -229,7 +234,7 @@ class OffboardControl(Node):
 
         msg = TrajectorySetpoint()
 
-        msg.timestamp = self.get_clock().now().nanoseconds // 1000
+        msg.timestamp = self.timestamp
 
         # Position setpoint
         msg.position = [0.0, 0.0, -0.5]
@@ -250,7 +255,7 @@ class OffboardControl(Node):
 
         msg = VehicleCommand()
 
-        msg.timestamp = self.get_clock().now().nanoseconds // 1000
+        msg.timestamp = self.timestamp
 
         msg.param1 = param1
         msg.param2 = param2
