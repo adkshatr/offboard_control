@@ -32,6 +32,7 @@ class OffboardControl(Node):
         self.timer = self.create_timer(0.02, self.timer_callback)
 
         self.get_logger().info("Offboard control node started")
+        self.time = self.get_clock().now().nanoseconds // 1000
         #self.time = self.timestamp
         #self.time_at_arm= 0
         
@@ -39,6 +40,18 @@ class OffboardControl(Node):
         self.offboard_setpoint_counter = 0
         self.path_counter_circle=0
         self.path_counter_straight=0
+
+        self.declare_parameter("target_system",1)
+        self.declare_parameter("target_component",1)
+        self.declare_parameter("source_system",1)
+        self.declare_parameter("source_component",1)
+
+        self.target_system=self.get_parameter("target_system").value
+        self.target_component=self.get_parameter("target_component").value
+        self.source_system=self.get_parameter("source_system").value
+        self.source_component=self.get_parameter("source_component").value
+
+
 
         self.x =0.0
         self.y =0.0
@@ -64,7 +77,7 @@ class OffboardControl(Node):
         while rclpy.ok():
             key=input()
             print(f'command recieved = {key}')
-            if key.lower()=='l':
+            if key=='l':
                 self.land_request=True
                 self.ready2hover=False
                 self.disarm=False
@@ -73,7 +86,7 @@ class OffboardControl(Node):
                 self.target_point_follower=False
                 self.hold=False
                 print('emergency landing requested')
-            if key.lower()=='d':
+            if key=='d':
                 self.land_request=False
                 self.ready2hover=False
                 self.disarm=True
@@ -82,7 +95,7 @@ class OffboardControl(Node):
                 self.hold=False
                 self.target_point_follower=False
                             
-            if key.lower()=='h':
+            if key=='h':
                 self.land_request=False
                 self.ready2hover=False
                 self.disarm=False
@@ -93,7 +106,8 @@ class OffboardControl(Node):
                 self.x =self.curr_x
                 self.y =self.curr_y
                 self.z =self.curr_z
-            if key.isdigit()==1:
+            if key=='1':
+                print("straigh path trigger")
                 self.land_request=False
                 self.ready2hover=False
                 self.disarm=False
@@ -101,7 +115,8 @@ class OffboardControl(Node):
                 self.path2=False
                 self.hold=False
                 self.target_point_follower=False
-            if key.isdigit()==2:
+            if key=='2':
+                print("circular path trigger")
                 self.land_request=False
                 self.ready2hover=False
                 self.disarm=False
@@ -109,7 +124,7 @@ class OffboardControl(Node):
                 self.path1=False
                 self.hold=False
                 self.target_point_follower=False
-            if key.isdigit()==3:
+            if key=='3':
                 self.land_request=False
                 self.ready2hover=False
                 self.disarm=False
@@ -220,7 +235,8 @@ class OffboardControl(Node):
 
         msg = OffboardControlMode()
 
-        msg.timestamp = self.timestamp
+        # msg.timestamp = self.timestamp
+        msg.timestamp =self.get_clock().now().nanoseconds // 1000
 
         msg.position = True
         msg.velocity = False
@@ -234,7 +250,7 @@ class OffboardControl(Node):
 
         msg = TrajectorySetpoint()
 
-        msg.timestamp = self.timestamp
+        msg.timestamp =self.get_clock().now().nanoseconds // 1000
 
         # Position setpoint
         msg.position = [0.0, 0.0, -0.5]
@@ -255,18 +271,18 @@ class OffboardControl(Node):
 
         msg = VehicleCommand()
 
-        msg.timestamp = self.timestamp
+        msg.timestamp =self.get_clock().now().nanoseconds // 1000
 
         msg.param1 = param1
         msg.param2 = param2
 
         msg.command = command
 
-        msg.target_system = 1
-        msg.target_component = 1
+        msg.target_system = self.target_system
+        msg.target_component = self.target_component
 
-        msg.source_system = 1
-        msg.source_component = 1
+        msg.source_system = self.source_system
+        msg.source_component = self.source_component
 
         msg.from_external = True
 
